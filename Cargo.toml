@@ -1,0 +1,24 @@
+[workspace]
+members = ["src/rustyrepl", "src/cmd"]
+resolver = "2"
+[workspace.package]
+name = "RocksDb-CLI"
+version = "0.1.0"
+edition = "2024"
+license = "Apache-2.0"
+[workspace.dependencies]
+rocksdb = "0.23.0"
+clap = {version = "4.0.0", features = ["derive"]}
+serde = {version = "1.0.136", features = ["derive"]}
+serde_json = {version = "1.0.136"}
+hex = "0.4.3"
+anyhow = "1.0.98"
+thiserror = "2.0.12"
+async-trait = "0.1.88"
+comfy-table = "7.1.4"
+rustyline = { version = "16.0.0", features = ["derive"] }
+colored = "3.0.0"
+unescaper = "0.1.6"
+## workspaces members
+rustyrepl = {path = "./src/rustyrepl"}
+cmd = {path = "./src/cmd"}
