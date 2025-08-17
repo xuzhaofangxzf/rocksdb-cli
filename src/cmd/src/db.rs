@@ -42,6 +42,10 @@ impl DBHelper {
         }
     }
 
+    pub fn get_cfs_names(&self) -> Vec<String> {
+        self.cf_list.clone()
+    }
+
     fn get_cf_handle(&self, name: &str) -> Option<&rocksdb::ColumnFamily> {
         self.db.cf_handle(name)
     }
@@ -103,8 +107,7 @@ impl DBHelper {
     ) -> Result<impl Iterator<Item = (Vec<u8>, Vec<u8>)>> {
         let cf = self.get_cf_handle(&self.current_cf).unwrap();
         let iter = self.db.prefix_iterator_cf(cf, prefix);
-        let key_values = iter.filter_map(|kv| kv.ok())
-        .map(move |(key, value)| {
+        let key_values = iter.filter_map(|kv| kv.ok()).map(move |(key, value)| {
             if highlight_matched {
                 let highlighted_key: Vec<u8> = highlight_pattern(prefix, key.into_vec());
                 (highlighted_key, value.into_vec())
@@ -114,7 +117,6 @@ impl DBHelper {
         });
         Ok(key_values)
     }
-
 
     pub fn contains_stringkey(&self, key: &str) -> bool {
         if let Some(cf) = self.get_cf_handle(&self.current_cf) {
@@ -136,18 +138,21 @@ impl DBHelper {
         let cf = self.get_cf_handle(&self.current_cf).unwrap();
         let iter = self.db.iterator_cf(cf, IteratorMode::Start);
         let results = iter
-        .filter_map(|item| {
-            item.ok()
-        })
-        .filter(|value| value.0.windows(pattern.len()).any(|window| window == pattern.as_bytes()))
-        .map(move |(key, value)| {
-            if highlight_matched {
-                let highlighted_value = highlight_pattern(pattern, value.into_vec());
-                (key.to_vec(), highlighted_value)
-            } else {
-                (key.to_vec(), value.to_vec())
-            }
-        });
+            .filter_map(|item| item.ok())
+            .filter(|value| {
+                value
+                    .0
+                    .windows(pattern.len())
+                    .any(|window| window == pattern.as_bytes())
+            })
+            .map(move |(key, value)| {
+                if highlight_matched {
+                    let highlighted_value = highlight_pattern(pattern, value.into_vec());
+                    (key.to_vec(), highlighted_value)
+                } else {
+                    (key.to_vec(), value.to_vec())
+                }
+            });
         Ok(results)
     }
 
@@ -160,10 +165,13 @@ impl DBHelper {
         let cf = self.get_cf_handle(&self.current_cf).unwrap();
         let iter = self.db.iterator_cf(cf, IteratorMode::Start);
         let results = iter
-            .filter_map(|item| {
-                item.ok()
+            .filter_map(|item| item.ok())
+            .filter(|value| {
+                value
+                    .1
+                    .windows(pattern.len())
+                    .any(|window| window == pattern.as_bytes())
             })
-            .filter(|value| value.1.windows(pattern.len()).any(|window| window == pattern.as_bytes()))
             .map(move |(key, value)| {
                 if highlight_matched {
                     let highlighted_value = highlight_pattern(pattern, value.into_vec());
@@ -207,10 +215,9 @@ impl DBHelper {
                 IteratorMode::Start
             },
         );
-        let key_values = iter.filter_map(|kv| kv.ok())
-        .map(|(key, value)| {
-            (key.into(), value.into())
-        });
+        let key_values = iter
+            .filter_map(|kv| kv.ok())
+            .map(|(key, value)| (key.into(), value.into()));
         Ok(key_values)
     }
 }

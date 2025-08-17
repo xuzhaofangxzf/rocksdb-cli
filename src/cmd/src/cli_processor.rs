@@ -4,7 +4,7 @@ use crate::{
     display::{print_column_families, print_database_info, print_key_value_list},
     utility::write_output_to_file,
 };
-use anyhow::{ Result};
+use anyhow::Result;
 use colored::Colorize;
 use rustyrepl::ReplCommandProcessor;
 use std::cell::RefCell;
@@ -65,11 +65,7 @@ impl ReplCommandProcessor<InterCli> for CliProcessor {
                 all,
                 output,
             } => {
-                if let Ok(key_values) =
-                    self.db_helper
-                        .borrow()
-                        .prefix(&prefix, with_highlight)
-                {
+                if let Ok(key_values) = self.db_helper.borrow().prefix(&prefix, with_highlight) {
                     self.print_or_output_to_file(key_values, all, limit, output.as_deref())?;
                 }
             }
@@ -82,11 +78,11 @@ impl ReplCommandProcessor<InterCli> for CliProcessor {
                 all,
                 output,
             } => {
-                if let Ok(key_values) = self.db_helper.borrow().scan(
-                    start.as_deref(),
-                    end.as_deref(),
-                    reverse
-                ) {
+                if let Ok(key_values) =
+                    self.db_helper
+                        .borrow()
+                        .scan(start.as_deref(), end.as_deref(), reverse)
+                {
                     self.print_or_output_to_file(key_values, all, limit, output.as_deref())?;
                 }
             }
@@ -106,11 +102,7 @@ impl ReplCommandProcessor<InterCli> for CliProcessor {
                 all,
                 output,
             } => {
-                if let Ok(key_values) =
-                    self.db_helper
-                        .borrow()
-                        .search_key(&key, with_highlight)
-                {
+                if let Ok(key_values) = self.db_helper.borrow().search_key(&key, with_highlight) {
                     self.print_or_output_to_file(key_values, all, limit, output.as_deref())?;
                 }
             }
@@ -122,10 +114,7 @@ impl ReplCommandProcessor<InterCli> for CliProcessor {
                 all,
                 output,
             } => {
-                if let Ok(key_values) =
-                    self.db_helper
-                        .borrow()
-                        .search_value(&value, with_highlight)
+                if let Ok(key_values) = self.db_helper.borrow().search_value(&value, with_highlight)
                 {
                     self.print_or_output_to_file(key_values, all, limit, output.as_deref())?;
                 }
@@ -138,7 +127,6 @@ impl ReplCommandProcessor<InterCli> for CliProcessor {
     fn get_prompt(&self) -> String {
         format!("[{}] >>", self.db_helper.borrow().current_cf.bright_green())
     }
-
 }
 
 impl CliProcessor {
@@ -148,7 +136,13 @@ impl CliProcessor {
         }
     }
 
-    fn print_or_output_to_file<T: Iterator<Item = (Vec<u8>, Vec<u8>)>>(&self, key_values: T, all: bool, limit: usize, output: Option<&str>) -> Result<()>{
+    fn print_or_output_to_file<T: Iterator<Item = (Vec<u8>, Vec<u8>)>>(
+        &self,
+        key_values: T,
+        all: bool,
+        limit: usize,
+        output: Option<&str>,
+    ) -> Result<()> {
         if let Some(out_file) = output {
             if all {
                 write_output_to_file(key_values, &out_file)?;
@@ -156,8 +150,7 @@ impl CliProcessor {
                 write_output_to_file(key_values.take(limit), &out_file)?;
             }
         } else {
-            if all
-            {
+            if all {
                 print_key_value_list(key_values);
             } else {
                 print_key_value_list(key_values.take(limit));

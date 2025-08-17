@@ -1,6 +1,7 @@
 use anyhow::Result;
 use comfy_table::{Cell, Color, Table};
 use rocksdb::DB;
+const BATH_ROWS: usize = 100;
 
 pub fn print_key_value(key: &[u8], value: &[u8]) {
     let mut table = Table::new();
@@ -17,15 +18,17 @@ pub fn print_key_value(key: &[u8], value: &[u8]) {
     ]);
     table.add_row(vec![
         Cell::new(String::from_utf8_lossy(key)),
-        Cell::new(match unescaper::unescape(String::from_utf8_lossy(value).as_ref()) {
-            Ok(s_value) => s_value,
-            Err(_) => String::from_utf8_lossy(value).to_string(),
-        }),
+        Cell::new(
+            match unescaper::unescape(String::from_utf8_lossy(value).as_ref()) {
+                Ok(s_value) => s_value,
+                Err(_) => String::from_utf8_lossy(value).to_string(),
+            },
+        ),
     ]);
     println!("{table}");
 }
 
-pub fn print_key_value_list<T: Iterator<Item = (Vec<u8>, Vec<u8>)>> (entries: T) {
+pub fn print_key_value_list<T: Iterator<Item = (Vec<u8>, Vec<u8>)>>(entries: T) {
     let mut table = Table::new();
     table.set_content_arrangement(comfy_table::ContentArrangement::DynamicFullWidth);
     table.set_header(vec![
@@ -38,21 +41,27 @@ pub fn print_key_value_list<T: Iterator<Item = (Vec<u8>, Vec<u8>)>> (entries: T)
             .set_alignment(comfy_table::CellAlignment::Center)
             .fg(Color::Green),
     ]);
-
+    table.set_row_capacity(BATH_ROWS);
+    let mut row_count = 0;
     for (key, value) in entries {
         let key_str = String::from_utf8_lossy(&key).into_owned();
         let value_str = match std::str::from_utf8(&value) {
-            Ok(s) => {
-                match unescaper::unescape(s) {
-                    Ok(es) => es,
-                    Err(_) => s.to_string(),
-                }
-            }
+            Ok(s) => match unescaper::unescape(s) {
+                Ok(es) => es,
+                Err(_) => s.to_string(),
+            },
             Err(_) => format!("[BINARY] {}", hex::encode(value)),
         };
         table.add_row(vec![key_str, value_str]);
+        row_count += 1;
+        if row_count % BATH_ROWS == 0 {
+            println!("{table}");
+            table.clear_rows();
+        }
     }
-    println!("{table}");
+    if !table.is_empty() {
+        println!("{table}");
+    }
 }
 
 pub fn print_column_families(cfs: &[String], current: &str) {

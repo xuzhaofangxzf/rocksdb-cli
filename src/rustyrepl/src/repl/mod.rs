@@ -33,7 +33,6 @@ where
 {
     /// The REPL editor interface for the command prompt
     editor: Editor<H, DefaultHistory>,
-
     /// The history file
     history: Option<PathBuf>,
     /// User-provided command processor responsible for processing parsed command instructions and
@@ -206,5 +205,9 @@ where
         }
         self.close_history();
         Ok(())
+    }
+
+    pub fn set_helper(&mut self, helper: Option<H>) {
+        self.editor.set_helper(helper);
     }
 }
