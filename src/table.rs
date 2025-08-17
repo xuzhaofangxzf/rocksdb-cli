@@ -197,6 +197,21 @@ impl Table {
         self
     }
 
+    /// Clears all rows from the table.
+    ///
+    /// ```
+    /// use comfy_table::Table;
+    ///
+    /// let mut table = Table::new();
+    /// table.add_row(vec!["One", "Two"]);
+    /// table.clear_rows();
+    /// assert_eq!(table.row_count(), 0);
+    /// ```
+    pub fn clear_rows(&mut self) -> &mut Self {
+        self.rows.clear();
+        self
+    }
+
     /// Add multiple rows to the table if the predicate evaluates to `true`.
     ///
     /// ```
@@ -234,6 +249,20 @@ impl Table {
     /// ```
     pub fn row_count(&self) -> usize {
         self.rows.len()
+    }
+
+    /// Sets the capacity of the row vector.
+    ///
+    /// ```
+    /// use comfy_table::Table;
+    ///
+    /// let mut table = Table::new();
+    /// table.set_row_capacity(10);
+    /// assert_eq!(table.row_capacity(), 10);
+    /// ```
+    pub fn set_row_capacity(&mut self, capacity: usize) -> &mut Self {
+        self.rows.reserve(capacity);
+        self
     }
 
     /// Returns if the table is empty (contains no data rows).
