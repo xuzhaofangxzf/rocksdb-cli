@@ -178,7 +178,6 @@ where
                                     cmd_parts.extend(&commands);
                                     // We're only appending valid commands to the history trail
                                     self.editor.add_history_entry(line.as_str()).unwrap();
-                                    println!("commands = {:?}", commands);
                                     match C::try_parse_from(cmd_parts) {
                                         Ok(cli) => {
                                             // Call the underlying processing logic
