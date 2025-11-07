@@ -6,7 +6,7 @@ use rocksdb_cli::db::DBHelper;
 use rustyrepl::{Repl, ReplCommandProcessor};
 pub fn main() {
     let cli = Cli::parse();
-    let helper = DBHelper::new(&cli.path);
+    let helper = DBHelper::new(&cli.path, cli.readonly);
     let commands = vec![
         "help".into(),
         "list".into(),

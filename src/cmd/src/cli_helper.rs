@@ -1,3 +1,4 @@
+use colored::Colorize;
 use rustyline::completion::Pair;
 use rustyline::completion::{Completer, FilenameCompleter};
 use rustyline::error::ReadlineError;
@@ -58,6 +59,15 @@ impl Hinter for CliHelper {
     type Hint = String;
 }
 
-impl Highlighter for CliHelper {}
+impl Highlighter for CliHelper {
+    fn highlight_prompt<'b, 's: 'b, 'p: 'b>(
+        &'s self,
+        prompt: &'p str,
+        default: bool,
+    ) -> std::borrow::Cow<'b, str> {
+        _ = default;
+        std::borrow::Cow::Owned(format!("{}", prompt.bright_green()))
+    }
+}
 
 impl Validator for CliHelper {}

@@ -163,35 +163,74 @@ where
             let readline = self.editor.readline(&self.command_processor.get_prompt());
             match readline {
                 Ok(line) => {
-                    let parts: Vec<&str> = line.trim().split(' ').collect();
-                    let mut command = String::new();
-                    if let Some(head) = parts.first() {
-                        command = String::from(*head);
-                    }
-                    match command.to_lowercase().as_ref() {
-                        "" => {} // Loop, someone hit enter needlessly
-                        maybe_quit if self.command_processor.is_quit(maybe_quit) => break, // check for quit/exit
-                        _ => {
-                            // We're only appending valid commands to the history trail
-                            self.editor.add_history_entry(line.as_str()).unwrap();
-                            let mut cmd_parts = vec![command.as_ref()];
-                            cmd_parts
-                                .extend(line.trim().split(' ').collect::<Vec<_>>().iter().copied());
-                            match C::try_parse_from(cmd_parts.into_iter()) {
-                                Ok(cli) => {
-                                    // Call the underlying processing logic
-                                    self.command_processor.process_command(cli)?;
-                                }
-                                Err(clap_err) => match clap::Error::kind(&clap_err) {
-                                    clap::error::ErrorKind::DisplayHelp
-                                    | clap::error::ErrorKind::DisplayVersion => {
-                                        println!("{}", clap_err);
-                                    }
-                                    error => {
-                                        println!("{}", error);
-                                    }
-                                },
+                    let parts = shell_words::split(&line);
+                    match parts {
+                        Ok(commands) => {
+                            let mut command = String::new();
+                            if let Some(head) = commands.first() {
+                                command = String::from(head);
                             }
+                            match command.to_lowercase().as_ref() {
+                                "" => {} // Loop, someone hit enter needlessly
+                                maybe_quit if self.command_processor.is_quit(maybe_quit) => break, // check for quit/exit
+                                _ => {
+                                    let mut cmd_parts = vec![&command];
+                                    cmd_parts.extend(&commands);
+                                    // We're only appending valid commands to the history trail
+                                    self.editor.add_history_entry(line.as_str()).unwrap();
+                                    println!("commands = {:?}", commands);
+                                    match C::try_parse_from(cmd_parts) {
+                                        Ok(cli) => {
+                                            // Call the underlying processing logic
+                                            self.command_processor.process_command(cli)?;
+                                        }
+                                        Err(clap_err) => match clap::Error::kind(&clap_err) {
+                                            clap::error::ErrorKind::DisplayHelp
+                                            | clap::error::ErrorKind::DisplayVersion => {
+                                                println!("{}", clap_err);
+                                            }
+                                            error => {
+                                                println!("{}", error);
+                                            }
+                                        },
+                                    }
+                                }
+                            }
+                            // let mut command = String::new();
+                            // if let Some(head) = commands.first() {
+                            //     command = String::from(head);
+                            // }
+                            // match command.to_lowercase().as_ref() {
+                            //     "" => {} // Loop, someone hit enter needlessly
+                            //     maybe_quit if self.command_processor.is_quit(maybe_quit) => break, // check for quit/exit
+                            //     _ => {
+                            //         // We're only appending valid commands to the history trail
+                            //         self.editor.add_history_entry(line.as_str()).unwrap();
+                            //         let mut cmd_parts = vec![command.as_ref()];
+                            //         cmd_parts
+                            //             .extend(line.trim().split(' ').collect::<Vec<_>>().iter().copied());
+                            //         println!("commands = {:?}", cmd_parts);
+                            //         match C::try_parse_from(cmd_parts) {
+                            //             Ok(cli) => {
+                            //                 // Call the underlying processing logic
+                            //                 self.command_processor.process_command(cli)?;
+                            //             }
+                            //             Err(clap_err) => match clap::Error::kind(&clap_err) {
+                            //                 clap::error::ErrorKind::DisplayHelp
+                            //                 | clap::error::ErrorKind::DisplayVersion => {
+                            //                     println!("{}", clap_err);
+                            //                 }
+                            //                 error => {
+                            //                     println!("{}", error);
+                            //                 }
+                            //             },
+                            //         }
+                            //     }
+                            // }
+                        }
+                        Err(err) => {
+                            error!("{}", err);
+                            continue;
                         }
                     }
                 }

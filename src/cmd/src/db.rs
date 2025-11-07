@@ -16,10 +16,8 @@ pub struct DBHelper {
 }
 
 impl DBHelper {
-    pub fn new(path: &str) -> Self {
+    pub fn new(path: &str, readonly: Option<bool>) -> Self {
         let mut db_opts = Options::default();
-        db_opts.create_if_missing(true);
-        db_opts.create_missing_column_families(true);
         let prefix_extractor = SliceTransform::create_fixed_prefix(4);
         db_opts.set_prefix_extractor(prefix_extractor);
         let cf_list = match DB::list_cf(&db_opts, path) {
@@ -29,7 +27,13 @@ impl DBHelper {
                 std::process::exit(1);
             }
         };
-        let db = DB::open_cf(&db_opts, path, cf_list.iter()).unwrap();
+        println!("{:?}", cf_list);
+        let db;
+        if readonly.is_some() && readonly.unwrap() {
+            db = DBHelper::new_readonly_db(path, db_opts, &cf_list);
+        } else {
+            db = DBHelper::new_writable_db(path, &mut db_opts, &cf_list);
+        }
         DBHelper {
             db,
             path: path.to_string(),
@@ -40,6 +44,16 @@ impl DBHelper {
             },
             cf_list,
         }
+    }
+
+    fn new_readonly_db(path: &str, db_opts: Options, cf_list: &Vec<String>) -> rocksdb::DB {
+        DB::open_cf_for_read_only(&db_opts, path, cf_list, false).unwrap()
+    }
+
+    fn new_writable_db(path: &str, db_opts: &mut Options, cf_list: &Vec<String>) -> rocksdb::DB {
+        db_opts.create_if_missing(true);
+        db_opts.create_missing_column_families(true);
+        DB::open_cf(&db_opts, path, cf_list.iter()).unwrap()
     }
 
     pub fn get_cfs_names(&self) -> Vec<String> {

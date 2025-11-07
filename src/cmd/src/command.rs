@@ -7,6 +7,8 @@ pub struct Cli {
     /// Path to RocksDB directory
     #[arg(short, long)]
     pub path: String,
+    #[arg(default_value = "true")]
+    pub readonly: Option<bool>,
 }
 
 #[derive(Debug, Parser)]

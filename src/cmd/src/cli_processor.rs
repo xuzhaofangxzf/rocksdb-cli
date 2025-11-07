@@ -27,8 +27,8 @@ impl ReplCommandProcessor<InterCli> for CliProcessor {
                 );
             }
             DBCommand::Use { name } => {
-                self.db_helper.borrow_mut().current_cf = name.clone();
                 if self.db_helper.borrow().cf_list.contains(&name) {
+                    self.db_helper.borrow_mut().current_cf = name.clone();
                     println!("DB switched to column family {}", name.bright_green());
                 } else {
                     println!("No column family {} selected", name.bright_red());
@@ -125,7 +125,7 @@ impl ReplCommandProcessor<InterCli> for CliProcessor {
     }
 
     fn get_prompt(&self) -> String {
-        format!("[{}] >>", self.db_helper.borrow().current_cf.bright_green())
+        format!("[{}] >>", self.db_helper.borrow().current_cf.trim())
     }
 }
 
