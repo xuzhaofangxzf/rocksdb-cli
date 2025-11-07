@@ -1,7 +1,7 @@
 use clap::Parser;
 use rocksdb_cli::cli_helper::CliHelper;
 use rocksdb_cli::cli_processor::CliProcessor;
-use rocksdb_cli::command::{Cli, InterCli};
+use rocksdb_cli::command::{Cli, DBCommand};
 use rocksdb_cli::db::DBHelper;
 use rustyrepl::{Repl, ReplCommandProcessor};
 pub fn main() {
@@ -27,8 +27,8 @@ pub fn main() {
     let cli_helper = CliHelper::new(commands);
     println!("RocksDB Interactive Shell");
     println!("Type 'help' for available commands");
-    let processor: Box<dyn ReplCommandProcessor<InterCli>> = Box::new(CliProcessor::new(helper));
-    let mut repl = Repl::<InterCli, CliHelper>::new(
+    let processor: Box<dyn ReplCommandProcessor<DBCommand>> = Box::new(CliProcessor::new(helper));
+    let mut repl = Repl::<DBCommand, CliHelper>::new(
         processor,
         Some("./history_file".to_string()),
         Some(cli_helper),

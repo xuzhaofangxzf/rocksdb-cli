@@ -120,7 +120,7 @@ impl DBHelper {
         highlight_matched: bool,
     ) -> Result<impl Iterator<Item = (Vec<u8>, Vec<u8>)>> {
         let cf = self.get_cf_handle(&self.current_cf).unwrap();
-        let iter = self.db.prefix_iterator_cf(cf, prefix);
+        let iter = self.db.prefix_iterator_cf(cf, prefix.as_bytes());
         let key_values = iter.filter_map(|kv| kv.ok()).map(move |(key, value)| {
             if highlight_matched {
                 let highlighted_key: Vec<u8> = highlight_pattern(prefix, key.into_vec());

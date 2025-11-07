@@ -1,5 +1,5 @@
 use clap::Parser;
-use clap::Subcommand;
+// use clap::Subcommand;
 
 #[derive(Debug, Parser)]
 #[command(author, version, about, long_about = None)]
@@ -11,14 +11,14 @@ pub struct Cli {
     pub readonly: Option<bool>,
 }
 
-#[derive(Debug, Parser)]
-#[command(author, version, about, long_about = None)]
-pub struct InterCli {
-    #[command(subcommand)]
-    pub command: DBCommand,
-}
+// #[derive(Debug, Parser)]
+// #[command(author, version, about, long_about = None)]
+// pub struct InterCli {
+//     #[command(subcommand)]
+//     pub command: DBCommand,
+// }
 
-#[derive(Debug, Subcommand)]
+#[derive(Debug, Parser)]
 pub enum DBCommand {
     /// List all column families
     List,

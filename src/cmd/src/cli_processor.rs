@@ -1,5 +1,5 @@
 use crate::{
-    command::{DBCommand, InterCli},
+    command::DBCommand,
     db::DBHelper,
     display::{print_column_families, print_database_info, print_key_value_list},
     utility::write_output_to_file,
@@ -14,12 +14,12 @@ pub struct CliProcessor {
     pub db_helper: RefCell<DBHelper>,
 }
 
-impl ReplCommandProcessor<InterCli> for CliProcessor {
+impl ReplCommandProcessor<DBCommand> for CliProcessor {
     fn is_quit(&self, command: &str) -> bool {
         matches!(command, "quit" | "exit")
     }
-    fn process_command(&self, command: InterCli) -> Result<()> {
-        match command.command {
+    fn process_command(&self, command: DBCommand) -> Result<()> {
+        match command {
             DBCommand::List => {
                 print_column_families(
                     &self.db_helper.borrow().cf_list,

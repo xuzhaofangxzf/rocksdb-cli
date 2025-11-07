@@ -165,7 +165,7 @@ where
                 Ok(line) => {
                     let parts = shell_words::split(&line);
                     match parts {
-                        Ok(commands) => {
+                        Ok(mut commands) => {
                             let mut command = String::new();
                             if let Some(head) = commands.first() {
                                 command = String::from(head);
@@ -174,11 +174,10 @@ where
                                 "" => {} // Loop, someone hit enter needlessly
                                 maybe_quit if self.command_processor.is_quit(maybe_quit) => break, // check for quit/exit
                                 _ => {
-                                    let mut cmd_parts = vec![&command];
-                                    cmd_parts.extend(&commands);
+                                    commands.insert(0, command);
                                     // We're only appending valid commands to the history trail
                                     self.editor.add_history_entry(line.as_str()).unwrap();
-                                    match C::try_parse_from(cmd_parts) {
+                                    match C::try_parse_from(commands) {
                                         Ok(cli) => {
                                             // Call the underlying processing logic
                                             self.command_processor.process_command(cli)?;
