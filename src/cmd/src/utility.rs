@@ -33,8 +33,14 @@ pub fn write_output_to_file<T: Iterator<Item = (Vec<u8>, Vec<u8>)>>(key_values: 
     let mut writer = BufWriter::new(file);
     for (key, value) in key_values {
         let key_str = String::from_utf8_lossy(&key);
-        let val_str = String::from_utf8_lossy(&value);
-        writeln!(writer, "{}: {}", key_str, val_str).unwrap();
+        let value_str = match std::str::from_utf8(&value) {
+            Ok(s) => match unescaper::unescape(s) {
+                Ok(es) => es,
+                Err(_) => s.to_string(),
+            },
+            Err(_) => format!("[BINARY] {}", hex::encode(value)),
+        };
+        writeln!(writer, "{}: {}", key_str, value_str).unwrap();
     }
     Ok(())
 }
