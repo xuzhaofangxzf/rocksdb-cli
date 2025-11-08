@@ -163,73 +163,8 @@ where
             let readline = self.editor.readline(&self.command_processor.get_prompt());
             match readline {
                 Ok(line) => {
-                    let parts = shell_words::split(&line);
-                    match parts {
-                        Ok(mut commands) => {
-                            let mut command = String::new();
-                            if let Some(head) = commands.first() {
-                                command = String::from(head);
-                            }
-                            match command.to_lowercase().as_ref() {
-                                "" => {} // Loop, someone hit enter needlessly
-                                maybe_quit if self.command_processor.is_quit(maybe_quit) => break, // check for quit/exit
-                                _ => {
-                                    commands.insert(0, command);
-                                    // We're only appending valid commands to the history trail
-                                    self.editor.add_history_entry(line.as_str()).unwrap();
-                                    match C::try_parse_from(commands) {
-                                        Ok(cli) => {
-                                            // Call the underlying processing logic
-                                            self.command_processor.process_command(cli)?;
-                                        }
-                                        Err(clap_err) => match clap::Error::kind(&clap_err) {
-                                            clap::error::ErrorKind::DisplayHelp
-                                            | clap::error::ErrorKind::DisplayVersion => {
-                                                println!("{}", clap_err);
-                                            }
-                                            error => {
-                                                println!("{}", error);
-                                            }
-                                        },
-                                    }
-                                }
-                            }
-                            // let mut command = String::new();
-                            // if let Some(head) = commands.first() {
-                            //     command = String::from(head);
-                            // }
-                            // match command.to_lowercase().as_ref() {
-                            //     "" => {} // Loop, someone hit enter needlessly
-                            //     maybe_quit if self.command_processor.is_quit(maybe_quit) => break, // check for quit/exit
-                            //     _ => {
-                            //         // We're only appending valid commands to the history trail
-                            //         self.editor.add_history_entry(line.as_str()).unwrap();
-                            //         let mut cmd_parts = vec![command.as_ref()];
-                            //         cmd_parts
-                            //             .extend(line.trim().split(' ').collect::<Vec<_>>().iter().copied());
-                            //         println!("commands = {:?}", cmd_parts);
-                            //         match C::try_parse_from(cmd_parts) {
-                            //             Ok(cli) => {
-                            //                 // Call the underlying processing logic
-                            //                 self.command_processor.process_command(cli)?;
-                            //             }
-                            //             Err(clap_err) => match clap::Error::kind(&clap_err) {
-                            //                 clap::error::ErrorKind::DisplayHelp
-                            //                 | clap::error::ErrorKind::DisplayVersion => {
-                            //                     println!("{}", clap_err);
-                            //                 }
-                            //                 error => {
-                            //                     println!("{}", error);
-                            //                 }
-                            //             },
-                            //         }
-                            //     }
-                            // }
-                        }
-                        Err(err) => {
-                            error!("{}", err);
-                            continue;
-                        }
+                    if !self.handle_input_line(line) {
+                        break;
                     }
                 }
                 Err(ReadlineError::Interrupted) => break, // CTRL-C
@@ -242,6 +177,56 @@ where
         }
         self.close_history();
         Ok(())
+    }
+
+    pub fn handle_input_line(&mut self, line: String) -> bool {
+        let parts = shell_words::split(&line);
+        match parts {
+            Ok(mut commands) => {
+                let mut command = String::new();
+                if let Some(head) = commands.first() {
+                    command = String::from(head);
+                }
+                if self.is_quit(command.to_lowercase().as_str()) {
+                    return false;
+                }
+                // in repl mode, clap need to add a command in the first, because most of the commands is app --help, so the clap will parse from the second argument
+                commands.insert(0, command);
+                // We're only appending valid commands to the history trail
+                self.editor.add_history_entry(line.as_str()).unwrap();
+                self.process_command_inner(commands);
+            }
+            Err(err) => {
+                error!("{}", err);
+            }
+        }
+        true
+    }
+
+    fn process_command_inner(&mut self, commands: Vec<String>) {
+        match C::try_parse_from(commands) {
+            Ok(cli) => {
+                // Call the underlying processing logic
+                match self.command_processor.process_command(cli) {
+                    Ok(_) => {}
+                    Err(err) => {
+                        error!("{}", err);
+                    }
+                }
+            }
+            Err(clap_err) => match clap::Error::kind(&clap_err) {
+                clap::error::ErrorKind::DisplayHelp | clap::error::ErrorKind::DisplayVersion => {
+                    println!("{}", clap_err);
+                }
+                error => {
+                    println!("{}", error);
+                }
+            },
+        }
+    }
+
+    fn is_quit(&self, command: &str) -> bool {
+        return self.command_processor.is_quit(command);
     }
 
     pub fn set_helper(&mut self, helper: Option<H>) {

@@ -21,22 +21,13 @@ impl ReplCommandProcessor<DBCommand> for CliProcessor {
     fn process_command(&self, command: DBCommand) -> Result<()> {
         match command {
             DBCommand::List => {
-                print_column_families(
-                    &self.db_helper.borrow().cf_list,
-                    &self.db_helper.borrow().current_cf,
-                );
+                self.handle_list();
             }
             DBCommand::Use { name } => {
-                if self.db_helper.borrow().cf_list.contains(&name) {
-                    self.db_helper.borrow_mut().current_cf = name.clone();
-                    println!("DB switched to column family {}", name.bright_green());
-                } else {
-                    println!("No column family {} selected", name.bright_red());
-                }
+                self.handle_use(name);
             }
             DBCommand::Delete { key } => {
-                self.db_helper.borrow_mut().delete(&key)?;
-                println!("Key {} deleted", key.bright_green());
+                self.handle_delete(&key)?;
             }
 
             DBCommand::Get { key, json } => {
@@ -134,6 +125,28 @@ impl CliProcessor {
         Self {
             db_helper: RefCell::new(db_helper),
         }
+    }
+
+    fn handle_list(&self) {
+        print_column_families(
+            &self.db_helper.borrow().cf_list,
+            &self.db_helper.borrow().current_cf,
+        );
+    }
+
+    fn handle_use(&self, name: String) {
+        if self.db_helper.borrow().cf_list.contains(&name) {
+            self.db_helper.borrow_mut().current_cf = name.clone();
+            println!("DB switched to column family {}", name.bright_green());
+        } else {
+            println!("No column family {} selected", name.bright_red());
+        }
+    }
+
+    fn handle_delete(&self, key: &str) -> Result<()> {
+        self.db_helper.borrow_mut().delete(key)?;
+        println!("Key {} deleted", key.bright_green());
+        Ok(())
     }
 
     fn print_or_output_to_file<T: Iterator<Item = (Vec<u8>, Vec<u8>)>>(
